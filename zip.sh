@@ -1,6 +1,6 @@
-find ./ -name pom.xml | rev | cut -d/ -f2- | rev > output.txt
+find ./ -name pom.xml | rev | cut -d/ -f2- | rev > location.txt
 
-echo "Zip Lambda File Location!"
+echo "Zip POM File Location!"
 WORK_DIR=`pwd`
 echo $WORK_DIR
 while read p; do
@@ -14,6 +14,4 @@ while read p; do
   mv $v.zip $WORK_DIR
   echo "Checking Out to Root Directory"
   cd $WORK_DIR
-done <output.txt
-
-#zip -r dir1.zip ./dir1/*
+done <location.txt

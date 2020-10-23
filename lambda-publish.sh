@@ -27,7 +27,7 @@ while read p; do
 		echo " Create Lambda: $p"
 		aws lambda create-function --function-name $p --zip-file fileb://$p.zip	\
 		--handler package.Class::method  --runtime java11 \
-		--role arn:aws:iam::872154951115:role/lambda
+		--role arn:aws:iam::872154951115:role/admin_role
 		version=`aws lambda publish-version --function-name $p --query "Version" | xargs`
 		echo "Create Alias for $p"
 		aws lambda create-alias --function-name $p \

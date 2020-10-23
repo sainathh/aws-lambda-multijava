@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  labels:
+    name: loans-svc
+  name: spring-controller
+  namespace: demo-dev
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: loans-svc
+    spec:
+      containers:
+      - image: sainadhdockerhub/loans-svc
+        name: loans-svc
+        ports:
+        - name: loans-svc
+          containerPort: 8080      
+---
+# Node Port Service
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: loans-svc
+  name: loans-svc
+  namespace: demo-dev
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    name: loans-svc
+---
+# Mongo host path rc
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  labels:
+    name: mongo
+  name: mongo-controller
+  namespace: demo-dev
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: mongo
+    spec:
+      containers:
+      - image: mongo
+        name: mongo
+        ports:
+        - name: mongo
+          containerPort: 27017
+          hostPort: 27017
+        volumeMounts:
+        - name: mongo-persistent-storage
+          mountPath: /data/db
+      volumes:
+      - name: mongo-persistent-storage
+        hostPath:
+         path: /tmp/dbbackup
+---
+# Mongo Node Port RC
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: mongo
+  name: mongo
+  namespace: demo-dev
+spec:
+  type: ClusterIP
+  ports:
+    - port: 27017
+      targetPort: 27017
+  selector:
+    name: mongo

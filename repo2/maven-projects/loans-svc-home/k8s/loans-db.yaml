@@ -1,0 +1,83 @@
+ 
+apiVersion: v1
+kind: Service
+metadata:
+  name: loans-db-svc
+  labels:
+    app:  loans-db-svc
+spec:
+  ports:
+    - port: 3306 
+  selector:
+    app:  loans-mysql-db
+  type: NodePort 
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name:  loans-mysql-db-dep
+  labels:
+    app: loans-mysql-db
+spec:
+  selector:
+    matchLabels:
+      app: loans-mysql-db
+      tier: data
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: loans-mysql-db
+        tier: data
+    spec:          
+      containers:
+      - image:  stackaero/aero-mysql:latest
+        name: loans-mysql-db
+        env:
+          - name: MYSQL_USER
+            value: "appuser"
+          - name: MYSQL_DATABASE
+            value: "mortgage_loan_db"
+          - name: ALLOW_EMPTY_PASSWORD
+            value: "yes"
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: loan-app-secrets
+                key: MYSQL_PASSWORD                   
+        ports:
+        - containerPort: 3306
+          name: mysql   
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: loans-mongodb-auth-init
+spec:
+  template:
+    metadata:
+      name: loans-mysql-db-init
+    spec:
+      containers:
+      - image:  stackaero/aero-mysql:latest
+        name: loans-mysql-init-job
+        command:
+         - "bin/bash"
+         - "-c"
+         - "/home/bitnami/mysql_db_init.sh"
+        env:
+          - name: MYSQL_HOST
+            value: "loans-db-svc"
+          - name: MYSQL_USER
+            value: "appuser"
+          - name: MYSQL_DATABASE
+            value: "mortgage_loan_db"
+          - name: DB_INIT_URL
+            value: "https://raw.githubusercontent.com/stacklynx/mortgage-api/master/mortgage_loan.sql"
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: loan-app-secrets
+                key: MYSQL_PASSWORD                           
+      restartPolicy: Never
